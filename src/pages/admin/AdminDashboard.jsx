@@ -13,6 +13,13 @@ export default function AdminDashboard() {
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
 
+  const currentDateStr = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+
   useEffect(() => {
     async function load() {
       try {
@@ -31,12 +38,30 @@ export default function AdminDashboard() {
     load()
   }, [])
 
-  if (loading) return <Loader label="Loading admin dashboard..." />
+  if (loading) return <Loader label="Loading agency overview..." />
 
   const statCards = [
-    { label: 'My Sub-Clients', value: stats?.totalClients ?? 0, max: stats?.limits?.maxClients ?? 20, icon: Users },
-    { label: 'Client Campaigns Run', value: stats?.totalCampaigns ?? 0, icon: Megaphone },
-    { label: 'Client Messages Sent', value: stats?.totalMessages ?? 0, max: stats?.limits?.maxMessages ?? 100000, icon: MessageSquare },
+    {
+      title: 'Client Accounts',
+      value: (stats?.totalClients ?? 0).toLocaleString(),
+      subtext: `max limit: ${stats?.limits?.maxClients ?? 20}`,
+      icon: Users,
+      iconBg: 'bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/30',
+    },
+    {
+      title: 'Client Campaigns',
+      value: (stats?.totalCampaigns ?? 0).toLocaleString(),
+      subtext: 'total campaigns executed',
+      icon: Megaphone,
+      iconBg: 'bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/30',
+    },
+    {
+      title: 'Total Messages Sent',
+      value: (stats?.totalMessages ?? 0).toLocaleString(),
+      subtext: `max limit: ${(stats?.limits?.maxMessages ?? 100000).toLocaleString()}`,
+      icon: MessageSquare,
+      iconBg: 'bg-sky-500/10 text-sky-400 border border-sky-500/30',
+    },
   ]
 
   const planCounts = { Free: 0, Starter: 0, Pro: 0, Enterprise: 0 }
@@ -65,62 +90,87 @@ export default function AdminDashboard() {
   ]
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0F172A] p-6 rounded-2xl border border-[#1E293B]">
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Header with Live Status Pill */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-[#3B82F6]">
-            Admin Portal
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">Welcome back! You are managing your isolated admin workspace and client accounts.</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">Agency Overview</h1>
+          <p className="text-sm font-semibold text-slate-400 mt-1">{currentDateStr}</p>
         </div>
-        <Link
-          to="/admin/clients"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#3B82F6] text-white font-extrabold text-sm hover:opacity-90 transition-all shrink-0"
-        >
-          <span>Manage My Clients</span>
-          <ArrowUpRight className="w-4 h-4" />
-        </Link>
+        <div className="flex items-center gap-3">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] text-xs font-extrabold shadow-sm shrink-0">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#25D366] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#25D366]"></span>
+            </span>
+            <span>Agency Portal Active</span>
+          </div>
+          <Link
+            to="/admin/clients"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#25D366] text-[#0F172A] text-xs font-extrabold hover:bg-[#20bd5a] transition-all shadow-md shrink-0"
+          >
+            <span>Manage Clients</span>
+            <ArrowUpRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
 
+      {/* 3 Stat Cards Grid */}
       <div className="grid gap-6 sm:grid-cols-3">
-        {statCards.map((c) => {
-          const Icon = c.icon
+        {statCards.map((s) => {
+          const Icon = s.icon
           return (
-            <div key={c.label} className="p-6 rounded-2xl bg-[#0F172A] border border-[#1E293B] transition-all hover:border-[#3B82F6]/40">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-400">{c.label}</span>
-                <div className="p-2.5 rounded-xl bg-[#080E1E] text-[#3B82F6] border border-[#1E293B]">
-                  <Icon className="w-5 h-5" />
-                </div>
+            <div
+              key={s.title}
+              className="bg-[#1E293B] rounded-2xl p-6 border border-[#334155] shadow-lg transition-all hover:border-[#25D366]/40 hover:-translate-y-0.5"
+            >
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${s.iconBg} mb-4 shadow-sm`}>
+                <Icon className="w-5 h-5" />
               </div>
-              <div className="mt-4 flex items-baseline justify-between">
-                <span className="text-3xl font-black text-white">
-                  {c.value.toLocaleString()}
-                  {c.max && <span className="text-xs text-slate-400 font-normal ml-1">/ {c.max} max</span>}
-                </span>
+              <div className="text-3xl font-extrabold text-white tracking-tight">
+                {s.value}
               </div>
+              <div className="text-sm font-bold text-slate-200 mt-1.5">{s.title}</div>
+              <div className="text-xs text-slate-400 font-medium mt-0.5">{s.subtext}</div>
             </div>
           )
         })}
       </div>
 
+      {/* 2 Charts Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="Sub-Client Plan Tier Allocation" className="!bg-[#0F172A] !border-[#1E293B]">
+        <Card
+          title="Client Plan Allocation"
+          action={
+            <span className="px-3 py-1 rounded-full bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] text-xs font-bold">
+              Monthly
+            </span>
+          }
+          className="shadow-lg border-[#334155]"
+        >
           <DistributionBarChart
             data={planChartData}
             dataKey="count"
             name="Client Accounts"
-            color="#3B82F6"
+            color="#25D366"
             xKey="name"
             emptyMessage="No sub-clients registered yet"
           />
         </Card>
-        <Card title="WhatsApp API Connection Status" className="!bg-[#0F172A] !border-[#1E293B]">
+        <Card
+          title="WhatsApp API Status"
+          action={
+            <span className="px-3 py-1 rounded-full bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] text-xs font-bold">
+              Live Status
+            </span>
+          }
+          className="shadow-lg border-[#334155]"
+        >
           <DistributionLineChart
             data={statusChartData}
             dataKey="count"
             name="Client Status"
-            color="#3B82F6"
+            color="#25D366"
             xKey="name"
             emptyMessage="No sub-clients registered yet"
           />

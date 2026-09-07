@@ -13,9 +13,7 @@ export function ImpersonationBanner() {
       return
     }
     await revertImpersonation()
-    if (originalUser?.role === 'superadmin') {
-      navigate('/superadmin')
-    } else if (originalUser?.role === 'admin') {
+    if (originalUser?.role === 'admin') {
       navigate('/admin')
     } else {
       navigate('/')

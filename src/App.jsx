@@ -1,8 +1,8 @@
 import { Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { AuthProvider, useAuthContext } from './context/AuthContext'
 import { DashboardLayout } from './components/layout/DashboardLayout'
-import { SuperAdminLayout } from './components/layout/SuperAdminLayout'
 import { AdminLayout } from './components/layout/AdminLayout'
+import { SuperadminLayout } from './components/layout/SuperadminLayout'
 import { Loader } from './components/ui/Loader'
 
 import Login from './pages/auth/Login'
@@ -19,16 +19,17 @@ import BotFlow from './pages/chatbot/BotFlow'
 import Inbox from './pages/inbox/Inbox'
 import Analytics from './pages/analytics/Analytics'
 import Settings from './pages/settings/Settings'
+import Profile from './pages/profile/Profile'
 import Photoshare from './pages/photoshare/Photoshare'
 import PublicGallery from './pages/photoshare/PublicGallery'
+import Users from './pages/users/Users'
 
-import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard'
-import ManageAdmins from './pages/superadmin/ManageAdmins'
-import ManageGlobalClients from './pages/superadmin/ManageGlobalClients'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import ManageClients from './pages/admin/ManageClients'
 import ClientTemplates from './pages/admin/ClientTemplates'
 import CreateTemplate from './pages/admin/CreateTemplate'
+
+import SuperadminDashboard from './pages/superadmin/SuperadminDashboard'
 
 function ProtectedLayout() {
   const { loading, isAuthenticated, user } = useAuthContext()
@@ -45,20 +46,6 @@ function ProtectedLayout() {
   return <DashboardLayout />
 }
 
-function SuperAdminProtectedLayout() {
-  const { loading, isAuthenticated, user } = useAuthContext()
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#090D16] flex items-center justify-center">
-        <Loader label="Loading Royal Command..." />
-      </div>
-    )
-  }
-  if (!isAuthenticated) return <Navigate to="/superadmin/login" replace />
-  if (user?.role !== 'superadmin') return <Navigate to="/" replace />
-  return <SuperAdminLayout />
-}
-
 function AdminProtectedLayout() {
   const { loading, isAuthenticated, user } = useAuthContext()
   if (loading) {
@@ -69,18 +56,41 @@ function AdminProtectedLayout() {
     )
   }
   if (!isAuthenticated) return <Navigate to="/admin/login" replace />
-  if (user?.role !== 'admin' && user?.role !== 'superadmin') return <Navigate to="/" replace />
+  if (user?.role === 'superadmin') return <Navigate to="/superadmin" replace />
+  if (user?.role === 'client') return <Navigate to="/" replace />
+  if (user?.role !== 'admin') return <Navigate to="/admin/login" replace />
   return <AdminLayout />
+}
+
+function SuperadminProtectedLayout() {
+  const { loading, isAuthenticated, user } = useAuthContext()
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0F172A] flex items-center justify-center">
+        <Loader label="Loading SuperAdmin Portal..." />
+      </div>
+    )
+  }
+  if (!isAuthenticated) return <Navigate to="/superadmin/login" replace />
+  if (user?.role === 'admin') return <Navigate to="/admin" replace />
+  if (user?.role === 'client') return <Navigate to="/" replace />
+  if (user?.role !== 'superadmin') return <Navigate to="/superadmin/login" replace />
+  return <SuperadminLayout />
 }
 
 function AuthLayout({ children, expectedRole }) {
   const { isAuthenticated, user } = useAuthContext()
-  if (isAuthenticated) {
-    if (expectedRole && user?.role !== expectedRole) {
+  if (isAuthenticated && user) {
+    if (expectedRole) {
+      if (user.role === expectedRole) {
+        if (user.role === 'superadmin') return <Navigate to="/superadmin" replace />
+        if (user.role === 'admin') return <Navigate to="/admin" replace />
+        return <Navigate to="/" replace />
+      }
       return children
     }
-    if (user?.role === 'superadmin') return <Navigate to="/superadmin" replace />
-    if (user?.role === 'admin') return <Navigate to="/admin" replace />
+    if (user.role === 'superadmin') return <Navigate to="/superadmin" replace />
+    if (user.role === 'admin') return <Navigate to="/admin" replace />
     return <Navigate to="/" replace />
   }
   return children
@@ -137,11 +147,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/superadmin',
-    element: <SuperAdminProtectedLayout />,
+    element: <SuperadminProtectedLayout />,
     children: [
-      { index: true, element: <SuperAdminDashboard /> },
-      { path: 'admins', element: <ManageAdmins /> },
-      { path: 'clients', element: <ManageGlobalClients /> },
+      { index: true, element: <SuperadminDashboard /> },
+      { path: 'users', element: <SuperadminDashboard /> },
+      { path: 'profile', element: <Profile /> },
       { path: 'settings', element: <Settings /> },
     ],
   },
@@ -150,9 +160,11 @@ const router = createBrowserRouter([
     element: <AdminProtectedLayout />,
     children: [
       { index: true, element: <AdminDashboard /> },
+      { path: 'users', element: <Users /> },
       { path: 'clients', element: <ManageClients /> },
       { path: 'clients/:clientId/templates', element: <ClientTemplates /> },
       { path: 'clients/:clientId/templates/new', element: <CreateTemplate /> },
+      { path: 'profile', element: <Profile /> },
       { path: 'settings', element: <Settings /> },
     ],
   },
@@ -169,6 +181,7 @@ const router = createBrowserRouter([
       { path: 'chatbot', element: <BotFlow /> },
       { path: 'templates', element: <Templates /> },
       { path: 'analytics', element: <Analytics /> },
+      { path: 'profile', element: <Profile /> },
       { path: 'settings', element: <Settings /> },
       { path: 'photoshare', element: <Photoshare /> },
     ],
@@ -176,6 +189,10 @@ const router = createBrowserRouter([
   {
     path: '/gallery/:linkCode',
     element: <PublicGallery />,
+  },
+  {
+    path: '*',
+    element: <Navigate to="/" replace />,
   },
 ])
 

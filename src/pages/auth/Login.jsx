@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { useAuth } from '../../hooks/useAuth'
-import { Shield, Crown, MessageSquare } from 'lucide-react'
+import { Shield, MessageSquare } from 'lucide-react'
 
 export default function Login({ portalRole: propRole }) {
   const navigate = useNavigate()
@@ -17,24 +17,23 @@ export default function Login({ portalRole: propRole }) {
   // Determine active portal role
   let role = propRole
   if (!role) {
-    if (location.pathname.startsWith('/superadmin')) role = 'superadmin'
-    else if (location.pathname.startsWith('/admin')) role = 'admin'
+    if (location.pathname.startsWith('/admin')) role = 'admin'
     else role = 'client'
   }
 
   // Theme configuration based on role
   const theme = {
     superadmin: {
-      title: 'Super Admin Login',
-      subtitle: 'Global Platform Administration & System Registry',
+      title: 'SuperAdmin Master Sign in',
+      subtitle: 'Platform User Approval & Master Control',
       badgeText: 'SA',
-      icon: <Crown className="w-7 h-7 text-[#090D16]" />,
-      badgeBg: 'bg-[#F59E0B]',
-      border: 'border-[#F59E0B]/40',
-      cardBg: 'bg-[#111827]',
-      pageBg: 'bg-[#090D16]',
-      buttonBg: '!bg-[#F59E0B] hover:!bg-[#F59E0B]/90 !text-[#090D16]',
-      accentText: 'text-[#F59E0B]',
+      icon: <Shield className="w-7 h-7 text-[#0F172A]" />,
+      badgeBg: 'bg-[#25D366]',
+      border: 'border-[#25D366]/50',
+      cardBg: 'bg-[#1E293B]',
+      pageBg: 'bg-[#0F172A]',
+      buttonBg: '!bg-[#25D366] hover:!bg-[#20bd5a] !text-[#0F172A]',
+      accentText: 'text-[#25D366]',
       showRegister: false,
       redirectUrl: '/superadmin'
     },
@@ -88,7 +87,10 @@ export default function Login({ portalRole: propRole }) {
       const data = await login(email, password, role)
       if (data.success) {
         toast.success(data.message || 'Welcome back')
-        navigate(theme.redirectUrl, { replace: true })
+        const userRole = data.data?.user?.role
+        if (userRole === 'superadmin') navigate('/superadmin', { replace: true })
+        else if (userRole === 'admin') navigate('/admin', { replace: true })
+        else navigate('/', { replace: true })
       } else toast.error(data.message || 'Login failed')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed')
@@ -135,7 +137,7 @@ export default function Login({ portalRole: propRole }) {
             required
           />
           <Button type="submit" className={`w-full font-extrabold py-3 rounded-xl shadow-md transition-all ${theme.buttonBg}`} disabled={loading}>
-            {loading ? 'Authenticating…' : `Sign in to ${role === 'superadmin' ? 'Super Admin' : role === 'admin' ? 'Agency Portal' : 'Workspace'}`}
+            {loading ? 'Authenticating…' : `Sign in to ${role === 'admin' ? 'Agency Portal' : 'Workspace'}`}
           </Button>
         </form>
         {theme.showRegister ? (

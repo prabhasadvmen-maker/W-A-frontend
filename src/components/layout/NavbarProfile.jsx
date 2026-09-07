@@ -26,10 +26,24 @@ export function NavbarProfile({ roleLabel = 'User', badgeColor = 'text-blue-400'
   )
 
   const getPanelName = () => {
-    if (user?.role === 'superadmin') return 'Super Administrator'
     if (user?.role === 'admin') return 'Reseller Agency Admin'
     return 'Client Marketing Console'
   }
+
+  const getDisplayName = () => {
+    if (user?.name && user.name.trim() !== '' && user.name.toLowerCase() !== 'vijay wiz') {
+      return user.name
+    }
+    if (user?.email) {
+      const handle = user.email.split('@')[0]
+      return handle.charAt(0).toUpperCase() + handle.slice(1)
+    }
+    return 'User'
+  }
+
+  const displayName = getDisplayName()
+  const displayEmail = user?.email || ''
+  const avatarChar = displayName.charAt(0).toUpperCase()
 
   return (
     <div className="flex items-center gap-2 relative" ref={dropdownRef}>
@@ -37,18 +51,18 @@ export function NavbarProfile({ roleLabel = 'User', badgeColor = 'text-blue-400'
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 text-xs text-slate-300 bg-[#111827] hover:bg-[#1E293B] px-2.5 py-1 rounded-lg border border-[#1F2937] hover:border-slate-600 transition-all shadow-sm focus:outline-none"
+        className="flex items-center gap-2 text-xs text-slate-800 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/80 transition-all shadow-sm focus:outline-none"
       >
-        <div className="w-5 h-5 rounded-md bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-[10px] font-black shadow-inner shrink-0">
-          {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+        <div className="w-6 h-6 rounded-lg bg-[#0B4F26] flex items-center justify-center text-white text-[11px] font-black shadow-sm shrink-0">
+          {avatarChar}
         </div>
-        <span className="text-[#F3F4F6] font-bold tracking-tight max-w-[90px] sm:max-w-[130px] truncate">
-          {user?.name || 'User'}
-        </span>
-        <span className={`font-extrabold text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded ${badgeBg} ${badgeColor} border border-current/20 shrink-0`}>
-          [{roleLabel}]
-        </span>
-        <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+        <div className="flex flex-col items-start leading-none text-left">
+          <span className="text-slate-900 font-extrabold tracking-tight max-w-[90px] sm:max-w-[130px] truncate text-[12px]">
+            {displayName}
+          </span>
+          <span className="text-[10px] font-bold text-slate-400 mt-0.5">{displayEmail || roleLabel}</span>
+        </div>
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ml-1 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {/* AI Agent Status Indicator (Pichhe / Right - Only in Client Panel) */}
@@ -75,29 +89,37 @@ export function NavbarProfile({ roleLabel = 'User', badgeColor = 'text-blue-400'
           {/* Header */}
           <div className="flex items-center gap-3 pb-3 border-b border-slate-700/60">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-base font-black shadow-md shrink-0">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              {avatarChar}
             </div>
             <div className="min-w-0 flex-1">
-              <h4 className="text-sm font-extrabold text-white truncate">{user?.name || 'User Profile'}</h4>
+              <h4 className="text-sm font-extrabold text-white truncate">{displayName}</h4>
               <p className="text-[11px] font-bold text-slate-400 truncate uppercase mt-0.5">{roleLabel}</p>
             </div>
           </div>
 
           {/* Profile Details */}
-          <div className="py-3 space-y-2.5 text-xs font-medium">
+          <div className="py-3 space-y-2 text-xs font-medium">
             <div className="flex items-center gap-2 text-slate-300 bg-slate-800/50 px-3 py-2 rounded-xl border border-slate-700/40">
               <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] text-slate-400 uppercase font-bold">Email / Gmail</p>
-                <p className="text-white font-semibold truncate">{user?.email || 'Not available'}</p>
+                <p className="text-white font-semibold truncate">{displayEmail || 'Not available'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-slate-300 bg-slate-800/50 px-3 py-2 rounded-xl border border-slate-700/40">
+              <UserCheck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] text-slate-400 uppercase font-bold">Business & Phone</p>
+                <p className="text-white font-semibold truncate">{user?.businessName || 'Individual'} • {user?.phone || 'No phone'}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 text-slate-300 bg-slate-800/50 px-3 py-2 rounded-xl border border-slate-700/40">
               <Shield className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] text-slate-400 uppercase font-bold">Panel Workspace</p>
-                <p className="text-white font-semibold truncate">{getPanelName()}</p>
+                <p className="text-[10px] text-slate-400 uppercase font-bold">Panel & Plan</p>
+                <p className="text-white font-semibold truncate">{getPanelName()} • <span className="text-[#25D366] capitalize font-bold">{user?.plan || 'Free'}</span></p>
               </div>
             </div>
           </div>

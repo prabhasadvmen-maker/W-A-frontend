@@ -4,7 +4,7 @@ import axios from 'axios'
 export function getApiBase() {
   const fromEnv = import.meta.env.VITE_API_URL
   if (fromEnv) return fromEnv.replace(/\/$/, '')
-  if (import.meta.env.DEV) return 'http://localhost:5005/api'
+  if (import.meta.env.DEV) return 'http://localhost:5000/api'
   return '/api'
 }
 
@@ -18,7 +18,11 @@ const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken')
+  const isSuperadminPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/superadmin')
+  const token = isSuperadminPath
+    ? (sessionStorage.getItem('superadmin_accessToken') || localStorage.getItem('superadmin_accessToken') || sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken'))
+    : (sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken') || sessionStorage.getItem('superadmin_accessToken') || localStorage.getItem('superadmin_accessToken'))
+  
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
@@ -79,6 +83,7 @@ export const authApi = {
   register: (body) => api.post('/auth/register', body),
   logout: () => api.post('/auth/logout'),
   me: () => api.get('/auth/me'),
+  updateProfile: (body) => api.put('/auth/profile', body),
   connectWhatsApp: (body) => api.post('/whatsapp/connect', body),
   saveAIAgentId: (body) => api.post('/whatsapp/agent', body),
   getAIAgentId: () => api.get('/whatsapp/agent'),
@@ -155,21 +160,6 @@ export const analyticsApi = {
   timeline: () => api.get('/analytics/timeline'),
 }
 
-export const superadminApi = {
-  stats: () => api.get('/superadmin/stats'),
-  listAdmins: () => api.get('/superadmin/admins'),
-  createAdmin: (body) => api.post('/superadmin/admins', body),
-  updateAdmin: (id, body) => api.put(`/superadmin/admins/${id}`, body),
-  deleteAdmin: (id) => api.delete(`/superadmin/admins/${id}`),
-  generateApiSharing: (id) => api.post(`/superadmin/admins/${id}/api-sharing`),
-  revokeApiSharing: (id) => api.delete(`/superadmin/admins/${id}/api-sharing`),
-  listClients: () => api.get('/superadmin/clients'),
-  updateClient: (id, body) => api.put(`/superadmin/clients/${id}`, body),
-  deleteClient: (id) => api.delete(`/superadmin/clients/${id}`),
-  generateClientApiSharing: (id) => api.post(`/superadmin/clients/${id}/api-sharing`),
-  revokeClientApiSharing: (id) => api.delete(`/superadmin/clients/${id}/api-sharing`),
-}
-
 export const adminApi = {
   stats: () => api.get('/admin/stats'),
   listClients: () => api.get('/admin/clients'),
@@ -180,6 +170,14 @@ export const adminApi = {
   revokeClientApiSharing: (id) => api.delete(`/admin/clients/${id}/api-sharing`),
   generateSelfSharing: () => api.post('/admin/self-api-sharing'),
   revokeSelfSharing: () => api.delete('/admin/self-api-sharing'),
+}
+
+export const superadminApi = {
+  stats: () => api.get('/superadmin/stats'),
+  listUsers: () => api.get('/superadmin/users'),
+  updateUserStatus: (id, status) => api.patch(`/superadmin/users/${id}/status`, { status }),
+  updateUser: (id, body) => api.patch(`/superadmin/users/${id}`, body),
+  deleteUser: (id) => api.delete(`/superadmin/users/${id}`),
 }
 
 export const photoshareApi = {

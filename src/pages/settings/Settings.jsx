@@ -116,7 +116,11 @@ export default function Settings() {
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between gap-4">
             <dt className="text-slate-500">Name</dt>
-            <dd className="text-[#F1F5F9]">{user?.name}</dd>
+            <dd className="text-[#F1F5F9]">
+              {(user?.name && user.name.toLowerCase() !== 'vijay wiz')
+                ? user.name
+                : (user?.role === 'superadmin' ? 'Super Admin' : (user?.email ? user.email.split('@')[0] : 'User'))}
+            </dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-slate-500">Email</dt>
@@ -124,7 +128,7 @@ export default function Settings() {
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-slate-500">Business</dt>
-            <dd className="text-[#F1F5F9]">{user?.businessName || '—'}</dd>
+            <dd className="text-[#F1F5F9]">{user?.businessName || (user?.role === 'superadmin' ? 'WHATS-AI Platform Owner' : '—')}</dd>
           </div>
           {user?.role === 'client' && (
             <div className="flex justify-between gap-4">
@@ -206,7 +210,7 @@ export default function Settings() {
         </Card>
       )}
 
-      {(user?.role === 'admin' || user?.role === 'superadmin') && (
+      {user?.role === 'admin' && (
         <Card title="Partner API Integration">
           <p className="text-xs text-slate-500 mb-4">
             Generate a Master API Integration key and access token to connect external systems like Magnifi AI.

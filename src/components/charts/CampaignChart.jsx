@@ -17,7 +17,7 @@ export function CampaignChart({ data }) {
 
   if (!chartData.length) {
     return (
-      <div className="flex h-64 items-center justify-center text-slate-500 text-sm">
+      <div className="flex h-64 items-center justify-center text-slate-400 font-medium text-sm">
         No campaign data yet
       </div>
     )
@@ -27,15 +27,20 @@ export function CampaignChart({ data }) {
     <div className="h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-          <XAxis dataKey="name" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-          <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+          <XAxis dataKey="name" stroke="#CBD5E1" tick={{ fill: '#64748B', fontSize: 11, fontWeight: 500 }} />
+          <YAxis stroke="#CBD5E1" tick={{ fill: '#64748B', fontSize: 11, fontWeight: 500 }} />
           <Tooltip
-            contentStyle={{ background: '#1E293B', border: '1px solid #334155', borderRadius: 8 }}
-            labelStyle={{ color: '#F1F5F9' }}
+            contentStyle={{
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '12px',
+              boxShadow: '0 4px 20px -4px rgba(0,0,0,0.1)',
+            }}
+            labelStyle={{ color: '#0F172A', fontWeight: 'bold' }}
           />
-          <Bar dataKey="sent" fill="#25D366" name="Sent" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="failed" fill="#EF4444" name="Failed" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="sent" fill="#0B4F26" name="Sent" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="failed" fill="#F43F5E" name="Failed" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

@@ -8,7 +8,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   const loadMe = useCallback(async () => {
-    const token = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken')
+    const isSuperadminPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/superadmin')
+    const token = isSuperadminPath
+      ? (sessionStorage.getItem('superadmin_accessToken') || localStorage.getItem('superadmin_accessToken') || sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken'))
+      : (sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken') || sessionStorage.getItem('superadmin_accessToken') || localStorage.getItem('superadmin_accessToken'))
+
     if (!token) {
       setUser(null)
       setLoading(false)
@@ -38,7 +42,15 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password, expectedRole = null) => {
     const { data } = await authApi.login({ email, password, expectedRole })
     if (data.success && data.data?.accessToken) {
-      localStorage.setItem('accessToken', data.data.accessToken)
+      const token = data.data.accessToken
+      const userRole = data.data?.user?.role
+      if (userRole === 'superadmin' || expectedRole === 'superadmin') {
+        sessionStorage.setItem('superadmin_accessToken', token)
+        localStorage.setItem('superadmin_accessToken', token)
+      } else {
+        sessionStorage.setItem('accessToken', token)
+        localStorage.setItem('accessToken', token)
+      }
       setUser(data.data.user)
     }
     return data
@@ -47,7 +59,9 @@ export function AuthProvider({ children }) {
   const register = useCallback(async (payload) => {
     const { data } = await authApi.register(payload)
     if (data.success && data.data?.accessToken) {
-      localStorage.setItem('accessToken', data.data.accessToken)
+      const token = data.data.accessToken
+      sessionStorage.setItem('accessToken', token)
+      localStorage.setItem('accessToken', token)
       setUser(data.data.user)
     }
     return data
@@ -59,11 +73,14 @@ export function AuthProvider({ children }) {
     } catch {
       /* ignore */
     }
-    if (sessionStorage.getItem('isImpersonatedSession')) {
-      sessionStorage.clear()
+    const isSuperadminPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/superadmin')
+    if (isSuperadminPath) {
+      sessionStorage.removeItem('superadmin_accessToken')
+      localStorage.removeItem('superadmin_accessToken')
     } else {
-      sessionStorage.clear()
+      sessionStorage.removeItem('accessToken')
       localStorage.removeItem('accessToken')
+      sessionStorage.removeItem('isImpersonatedSession')
       localStorage.removeItem('originalAccessToken')
       localStorage.removeItem('originalUser')
     }
