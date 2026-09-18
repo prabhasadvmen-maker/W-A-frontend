@@ -69,13 +69,18 @@ export default function Photoshare() {
         setFolderPhotos((prev) => [data.photo, ...prev])
         photoshareApi.getFolderDetails(selectedFolderId).then((res) => {
           if (res.data?.success) setAnalytics(res.data.data?.analytics)
-        })
+        }).catch(() => {})
       }
       loadFolders()
     }
     socket.on('photoshare:newPhoto', onNewPhoto)
     return () => socket.off('photoshare:newPhoto', onNewPhoto)
   }, [socket, selectedFolderId])
+
+  useEffect(() => {
+    if (!selectedFolderId) return
+    loadFolderDetails(selectedFolderId)
+  }, [selectedFolderId])
 
   function handleSaveBotPhone(val) {
     const cleaned = val.replace(/\D/g, '')
