@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { authApi } from '../services/api'
+import { getActiveToken, getTokenKey } from '../utils/auth'
 
 const AuthContext = createContext(null)
 
@@ -8,10 +9,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   const loadMe = useCallback(async () => {
-    const isSuperadminPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/superadmin')
-    const token = isSuperadminPath
-      ? (sessionStorage.getItem('superadmin_accessToken') || localStorage.getItem('superadmin_accessToken') || sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken'))
-      : (sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken') || sessionStorage.getItem('superadmin_accessToken') || localStorage.getItem('superadmin_accessToken'))
+    // Sirf path-specific token use karo — cross-contamination nahi
+    const token = getActiveToken()
 
     if (!token) {
       setUser(null)
@@ -45,11 +44,17 @@ export function AuthProvider({ children }) {
       const token = data.data.accessToken
       const userRole = data.data?.user?.role
       if (userRole === 'superadmin' || expectedRole === 'superadmin') {
+        // Superadmin token save karo, aur normal accessToken clear karo
         sessionStorage.setItem('superadmin_accessToken', token)
         localStorage.setItem('superadmin_accessToken', token)
+        sessionStorage.removeItem('accessToken')
+        localStorage.removeItem('accessToken')
       } else {
+        // Normal token save karo, aur superadmin token clear karo
         sessionStorage.setItem('accessToken', token)
         localStorage.setItem('accessToken', token)
+        sessionStorage.removeItem('superadmin_accessToken')
+        localStorage.removeItem('superadmin_accessToken')
       }
       setUser(data.data.user)
     }

@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Users, ShieldCheck, Settings, LogOut, ChevronRight, User } from 'lucide-react'
+import { LayoutDashboard, Users, ShieldCheck, Settings, LogOut, ChevronRight, User, FileText } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useSidebar } from '../../context/SidebarContext'
 
 const links = [
   { to: '/superadmin', label: 'OVERVIEW', icon: LayoutDashboard },
   { to: '/superadmin/users', label: 'USER APPROVALS', icon: Users },
+  { to: '/superadmin/templates', label: 'TEMPLATES', icon: FileText },
   { to: '/superadmin/settings', label: 'SETTINGS', icon: Settings },
 ]
 

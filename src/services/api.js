@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getActiveToken, getTokenKey } from '../utils/auth'
 
 /** In dev, call the API server directly so requests work even if the Vite proxy misroutes. */
 export function getApiBase() {
@@ -18,11 +19,7 @@ const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
-  const isSuperadminPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/superadmin')
-  const token = isSuperadminPath
-    ? (sessionStorage.getItem('superadmin_accessToken') || localStorage.getItem('superadmin_accessToken') || sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken'))
-    : (sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken') || sessionStorage.getItem('superadmin_accessToken') || localStorage.getItem('superadmin_accessToken'))
-  
+  const token = getActiveToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
@@ -61,17 +58,19 @@ api.interceptors.response.use(
         }
         const { data } = await refreshing
         if (data?.success && data.data?.accessToken) {
-          if (sessionStorage.getItem('accessToken')) {
-            sessionStorage.setItem('accessToken', data.data.accessToken)
+          const key = getTokenKey()
+          if (sessionStorage.getItem(key)) {
+            sessionStorage.setItem(key, data.data.accessToken)
           } else {
-            localStorage.setItem('accessToken', data.data.accessToken)
+            localStorage.setItem(key, data.data.accessToken)
           }
           original.headers.Authorization = `Bearer ${data.data.accessToken}`
           return api(original)
         }
       } catch {
-        sessionStorage.removeItem('accessToken')
-        localStorage.removeItem('accessToken')
+        const key = getTokenKey()
+        sessionStorage.removeItem(key)
+        localStorage.removeItem(key)
       }
     }
     return Promise.reject(error)
@@ -178,6 +177,10 @@ export const superadminApi = {
   updateUserStatus: (id, status) => api.patch(`/superadmin/users/${id}/status`, { status }),
   updateUser: (id, body) => api.patch(`/superadmin/users/${id}`, body),
   deleteUser: (id) => api.delete(`/superadmin/users/${id}`),
+  // Templates
+  listAllTemplates: () => api.get('/superadmin/templates'),
+  deleteTemplate: (id) => api.delete(`/superadmin/templates/${id}`),
+  refreshTemplateStatus: (id) => api.post(`/superadmin/templates/${id}/refresh-status`),
 }
 
 export const photoshareApi = {

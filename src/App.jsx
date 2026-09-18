@@ -30,6 +30,7 @@ import ClientTemplates from './pages/admin/ClientTemplates'
 import CreateTemplate from './pages/admin/CreateTemplate'
 
 import SuperadminDashboard from './pages/superadmin/SuperadminDashboard'
+import SuperadminTemplates from './pages/superadmin/SuperadminTemplates'
 
 function ProtectedLayout() {
   const { loading, isAuthenticated, user } = useAuthContext()
@@ -151,6 +152,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <SuperadminDashboard /> },
       { path: 'users', element: <SuperadminDashboard /> },
+      { path: 'templates', element: <SuperadminTemplates /> },
       { path: 'profile', element: <Profile /> },
       { path: 'settings', element: <Settings /> },
     ],
