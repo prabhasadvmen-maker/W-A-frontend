@@ -31,6 +31,8 @@ import CreateTemplate from './pages/admin/CreateTemplate'
 
 import SuperadminDashboard from './pages/superadmin/SuperadminDashboard'
 import SuperadminTemplates from './pages/superadmin/SuperadminTemplates'
+import Privacy from './pages/legal/Privacy'
+import Terms from './pages/legal/Terms'
 
 function ProtectedLayout() {
   const { loading, isAuthenticated, user } = useAuthContext()
@@ -191,6 +193,14 @@ const router = createBrowserRouter([
   {
     path: '/gallery/:linkCode',
     element: <PublicGallery />,
+  },
+  {
+    path: '/privacy',
+    element: <Privacy />,
+  },
+  {
+    path: '/terms',
+    element: <Terms />,
   },
   {
     path: '*',
