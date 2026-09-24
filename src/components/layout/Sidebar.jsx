@@ -22,6 +22,7 @@ import { useSidebar } from '../../context/SidebarContext'
 const links = [
   { to: '/', label: 'DASHBOARD', icon: LayoutDashboard },
   { to: '/campaigns', label: 'CAMPAIGNS', icon: Megaphone },
+  { to: '/bulk', label: 'BULK MESSAGE', icon: MessageSquare },
   { to: '/contacts', label: 'CONTACTS', icon: Users },
   { to: '/inbox', label: 'INBOX', icon: MessageCircle },
   { to: '/chatbot', label: 'CHATBOT', icon: Bot },

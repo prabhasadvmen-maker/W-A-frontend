@@ -140,6 +140,11 @@ export const messagesApi = {
   list: (params) => api.get('/messages', { params }),
 }
 
+export const bulkApi = {
+  send: (body) => api.post('/bulk/send', body),
+  history: () => api.get('/bulk/history'),
+}
+
 export const botApi = {
   getFlow: () => api.get('/bot/flow'),
   saveFlow: (body) => api.post('/bot/flow', body),

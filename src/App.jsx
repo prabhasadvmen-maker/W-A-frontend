@@ -14,6 +14,7 @@ import Contacts from './pages/contacts/Contacts'
 import ContactGroups from './pages/contacts/ContactGroups'
 import Campaigns from './pages/campaigns/Campaigns'
 import CreateCampaign from './pages/campaigns/CreateCampaign'
+import BulkMessage from './pages/bulk/BulkMessage'
 import Templates from './pages/templates/Templates'
 import BotFlow from './pages/chatbot/BotFlow'
 import Inbox from './pages/inbox/Inbox'
@@ -179,6 +180,7 @@ const router = createBrowserRouter([
       { index: true, element: <Dashboard /> },
       { path: 'campaigns', element: <Campaigns /> },
       { path: 'campaigns/new', element: <CreateCampaign /> },
+      { path: 'bulk', element: <BulkMessage /> },
       { path: 'contacts', element: <Contacts /> },
       { path: 'contacts/groups', element: <ContactGroups /> },
       { path: 'inbox', element: <Inbox /> },
