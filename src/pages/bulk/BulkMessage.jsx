@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import {
   Send, Users, Hash, FileText, Zap, CheckCircle2,
   XCircle, Clock, ChevronRight, BarChart2, RefreshCw,
   MessageSquare, X
 } from 'lucide-react'
-import { bulkApi, contactsApi } from '../../services/api'
+import { bulkApi, contactsApi, templatesApi } from '../../services/api'
 import { useSocket } from '../../hooks/useSocket'
 
 const TAB_COMPOSE = 'compose'
@@ -28,17 +28,23 @@ function StatCard({ icon: Icon, label, value, color }) {
 export default function BulkMessage() {
   const [tab, setTab] = useState(TAB_COMPOSE)
   const [groups, setGroups] = useState([])
-  const [form, setForm] = useState({ message: '', groupId: '', numbers: '' })
+  const [templates, setTemplates] = useState([])
+  const [form, setForm] = useState({ templateId: '', groupId: '', numbers: '' })
   const [sending, setSending] = useState(false)
   const [progress, setProgress] = useState(null)
   const [history, setHistory] = useState([])
   const [loadingHistory, setLoadingHistory] = useState(false)
-  const [charCount, setCharCount] = useState(0)
   const { socket } = useSocket()
 
   useEffect(() => {
     contactsApi.groups().then((r) => {
       if (r.data?.success) setGroups(r.data.data?.groups || [])
+    }).catch(() => {})
+    templatesApi.list().then((r) => {
+      if (r.data?.success) {
+        const approved = (r.data.data?.templates || []).filter((t) => t.metaStatus === 'APPROVED')
+        setTemplates(approved)
+      }
     }).catch(() => {})
   }, [])
 
@@ -52,8 +58,17 @@ export default function BulkMessage() {
         loadHistory()
       }
     }
+    const onError = (data) => {
+      if (data.error?.includes('131047') || data.error?.includes('outside allowed window')) {
+        toast.error(`${data.phone}: No active chat window — customer must message first`, { duration: 4000 })
+      }
+    }
     socket.on('bulk:progress', onProgress)
-    return () => socket.off('bulk:progress', onProgress)
+    socket.on('bulk:error', onError)
+    return () => {
+      socket.off('bulk:progress', onProgress)
+      socket.off('bulk:error', onError)
+    }
   }, [socket])
 
   useEffect(() => {
@@ -69,20 +84,27 @@ export default function BulkMessage() {
     finally { setLoadingHistory(false) }
   }
 
-  const fromNumbers = form.numbers
-    ? form.numbers.split(/[\n,]+/).map((n) => n.trim().replace(/\D/g, '')).filter((n) => n.length >= 10).length
-    : 0
+  function normalizeNumbers(raw) {
+    return raw.split(/[\n,]+/)
+      .map((n) => n.trim().replace(/\D/g, ''))
+      .filter((n) => n.length >= 7)
+      .map((n) => n.length <= 10 ? `91${n}` : n)
+  }
+
+  const fromNumbers = form.numbers ? normalizeNumbers(form.numbers).length : 0
+  const selectedTemplate = templates.find((t) => t._id === form.templateId)
 
   async function handleSend() {
-    if (!form.message.trim()) { toast.error('Message is required'); return }
+    if (!form.templateId) { toast.error('Select a template'); return }
     if (!form.groupId && !form.numbers.trim()) { toast.error('Select a group or enter phone numbers'); return }
     setSending(true)
     setProgress({ processed: 0, total: 0, sent: 0, failed: 0, done: false })
     try {
+      const normalizedNumbers = form.numbers ? normalizeNumbers(form.numbers).join('\n') : undefined
       const r = await bulkApi.send({
-        message: form.message.trim(),
+        templateId: form.templateId,
         groupId: form.groupId || undefined,
-        numbers: form.numbers || undefined,
+        numbers: normalizedNumbers,
       })
       if (r.data?.success) {
         toast.success(`Bulk send started for ${r.data.data?.total} contacts`)
@@ -98,9 +120,8 @@ export default function BulkMessage() {
   }
 
   function handleReset() {
-    setForm({ message: '', groupId: '', numbers: '' })
+    setForm({ templateId: '', groupId: '', numbers: '' })
     setProgress(null)
-    setCharCount(0)
   }
 
   const progressPct = progress?.total ? Math.round((progress.processed / progress.total) * 100) : 0
@@ -129,7 +150,7 @@ export default function BulkMessage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard icon={Users} label="Groups" value={groups.length} color="bg-blue-500/10 text-blue-400" />
         <StatCard icon={Hash} label="Manual Numbers" value={fromNumbers} color="bg-purple-500/10 text-purple-400" />
-        <StatCard icon={MessageSquare} label="Char Count" value={charCount} color="bg-amber-500/10 text-amber-400" />
+        <StatCard icon={FileText} label="Templates" value={templates.length} color="bg-amber-500/10 text-amber-400" />
         <StatCard icon={BarChart2} label="History" value={history.length} color="bg-emerald-500/10 text-emerald-400" />
       </div>
 
@@ -159,33 +180,32 @@ export default function BulkMessage() {
           {/* Left: Form */}
           <div className="lg:col-span-2 space-y-5">
 
-            {/* Message Box */}
+            {/* Template Selector */}
             <div className="bg-[#0F172A] border border-slate-800 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-bold text-slate-300 flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-emerald-400" /> Message Text
-                </label>
-                <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${
-                  charCount > 1000
-                    ? 'text-red-400 border-red-500/30 bg-red-500/10'
-                    : charCount > 500
-                    ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
-                    : 'text-slate-500 border-slate-700 bg-slate-800'
-                }`}>
-                  {charCount} / 4096
-                </span>
-              </div>
-              <textarea
-                rows={6}
-                placeholder={"Type your WhatsApp message here...\n\nExample:\nHello! This is a message from our team. 🎉"}
-                value={form.message}
-                onChange={(e) => {
-                  setForm({ ...form, message: e.target.value })
-                  setCharCount(e.target.value.length)
-                }}
-                className="w-full bg-slate-900/60 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 resize-none transition"
-              />
-              <p className="text-xs text-slate-600">Supports emojis and line breaks. Keep under 1000 chars for best delivery.</p>
+              <label className="text-sm font-bold text-slate-300 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-emerald-400" /> Select Template
+              </label>
+              {templates.length === 0 ? (
+                <p className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
+                  No approved templates found. Get a template approved from Meta first.
+                </p>
+              ) : (
+                <select
+                  value={form.templateId}
+                  onChange={(e) => setForm({ ...form, templateId: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 transition"
+                >
+                  <option value="">— Select an approved template —</option>
+                  {templates.map((t) => (
+                    <option key={t._id} value={t._id}>{t.name}</option>
+                  ))}
+                </select>
+              )}
+              {selectedTemplate && (
+                <div className="bg-slate-900 rounded-xl px-4 py-3 text-xs text-slate-400 whitespace-pre-wrap">
+                  {selectedTemplate.bodyText || selectedTemplate.body || 'Template preview not available'}
+                </div>
+              )}
             </div>
 
             {/* Recipients */}
@@ -218,7 +238,7 @@ export default function BulkMessage() {
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Manual Phone Numbers</label>
                 <textarea
                   rows={5}
-                  placeholder={"Enter numbers separated by comma or new line:\n919876543210\n918765432109, 917654321098\n\nInclude country code (91 for India)"}
+                  placeholder={"Enter numbers (91 added automatically):\n9876543210\n8765432109, 7654321098\n\nOr with country code:\n919876543210"}
                   value={form.numbers}
                   onChange={(e) => setForm({ ...form, numbers: e.target.value })}
                   className="w-full bg-slate-900/60 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 resize-none font-mono transition"
@@ -252,16 +272,19 @@ export default function BulkMessage() {
             </div>
           </div>
 
-          {/* Right: Preview + Progress + Tips */}
+            {/* Right: Preview + Progress + Tips */}
           <div className="space-y-5">
 
-            {/* WhatsApp Preview */}
+            {/* Template Preview */}
             <div className="bg-[#0F172A] border border-slate-800 rounded-2xl p-5 space-y-3">
               <h3 className="text-sm font-bold text-slate-300">Live Preview</h3>
               <div className="bg-[#0B1F12] rounded-xl p-4 min-h-[120px]">
                 <div className="bg-[#1A3A22] rounded-xl rounded-tl-none px-4 py-3 max-w-[85%] shadow">
                   <p className="text-sm text-slate-200 whitespace-pre-wrap break-words leading-relaxed">
-                    {form.message || <span className="text-slate-600 italic">Your message will appear here...</span>}
+                    {selectedTemplate
+                      ? (selectedTemplate.bodyText || selectedTemplate.body || 'Template body not available')
+                      : <span className="text-slate-600 italic">Select a template to preview...</span>
+                    }
                   </p>
                   <p className="text-right text-[10px] text-slate-500 mt-1.5">12:00 PM ✓✓</p>
                 </div>
@@ -312,11 +335,11 @@ export default function BulkMessage() {
               <ul className="space-y-1.5 text-xs text-slate-400">
                 <li className="flex items-start gap-2">
                   <ChevronRight className="h-3 w-3 text-amber-400 mt-0.5 shrink-0" />
-                  Always include country code (91 for India)
+                  Country code 91 automatically added for 10-digit numbers
                 </li>
                 <li className="flex items-start gap-2">
                   <ChevronRight className="h-3 w-3 text-amber-400 mt-0.5 shrink-0" />
-                  Keep messages under 1000 characters
+                  Template messages work on any number, no 24hr limit
                 </li>
                 <li className="flex items-start gap-2">
                   <ChevronRight className="h-3 w-3 text-amber-400 mt-0.5 shrink-0" />
